@@ -6,6 +6,44 @@ void testApp::setup(){
 	ofHideCursor();
     ofEnableAlphaBlending();
 	
+	//workaround for OF 0.8 ofFbos not drawing without a shader being used
+	//see https://github.com/openframeworks/openFrameworks/issues/2593
+	string vertexShader = 
+	STRINGIFY
+	(
+	 attribute vec4 position;       
+	 attribute vec2 texcoord;       
+	 
+	 uniform mat4 modelViewMatrix;  
+	 uniform mat4 projectionMatrix;
+	 
+	 varying vec2 texcoord0;
+	 
+	 void main()
+	 {
+		 vec4 pos = projectionMatrix * modelViewMatrix * position;
+		 gl_Position = pos;
+		 texcoord0 = texcoord;
+	 }
+	 );
+	
+	string fragmentShader = 
+	STRINGIFY
+	(
+	 precision highp float;
+	 uniform sampler2D   tex0;
+	 varying vec2        texcoord0;
+	 
+	 void main()
+	 {
+		 gl_FragColor = texture2D(tex0,texcoord0);
+	 }
+	 );
+	localShader.setupShaderFromSource(GL_VERTEX_SHADER, vertexShader);
+	localShader.setupShaderFromSource(GL_FRAGMENT_SHADER, fragmentShader);
+	localShader.bindDefaults();
+	localShader.linkProgram();
+	
 	brushX=0;
 	brushY=20;
 	
@@ -56,7 +94,9 @@ void testApp::update(){
 	
 	
     maskFbo.begin();
+		localShader.begin();
 		brushImage.draw(brushX-25,brushY-25,50,50);
+		localShader.end();
     maskFbo.end();
     
     // HERE the shader-masking happens

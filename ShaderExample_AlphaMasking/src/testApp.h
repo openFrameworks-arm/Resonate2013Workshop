@@ -29,7 +29,7 @@ public:
     ofFbo       fbo;
     
     ofShader    shader;
-    
+    ofShader localShader;
     bool        bBrushDown;
 	int brushX;
 	int brushY;
